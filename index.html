@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f0c29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>Undercover Animé</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(160deg, #0f0c29 0%, #24243e 50%, #302b63 100%);
+    background-attachment: fixed;
+    color: #f1f1f6;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom));
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen { display: none; flex: 1; flex-direction: column; animation: fadeIn .35s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  h1.logo {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #08d9d6, #ff2e63);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 8px 0 2px;
+  }
+  .tagline { text-align: center; color: #9a96c8; font-size: 13px; margin-bottom: 18px; letter-spacing: 3px; text-transform: uppercase; }
+
+  .panel {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #08d9d6; margin-bottom: 12px; }
+
+  .name-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .name-row input {
+    flex: 1; border: 1px solid rgba(255,255,255,.15); background: rgba(0,0,0,.25);
+    border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 16px; outline: none;
+  }
+  .name-row input::placeholder { color: #7d79a8; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: linear-gradient(135deg, rgba(8,217,214,.18), rgba(255,46,99,.18));
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 8px 12px; border-radius: 999px; font-size: 15px; font-weight: 600;
+  }
+  .chip b { color: #ff2e63; font-weight: 900; padding: 0 3px; font-size: 17px; }
+
+  .stepper { display: flex; align-items: center; justify-content: space-between; }
+  .stepper .label { font-size: 15px; font-weight: 600; }
+  .stepper .label small { display: block; color: #9a96c8; font-weight: 400; font-size: 12px; margin-top: 2px; }
+  .step-ctrl { display: flex; align-items: center; gap: 14px; }
+  .step-ctrl button {
+    width: 42px; height: 42px; border-radius: 50%; border: none; font-size: 22px; font-weight: 900;
+    background: rgba(255,255,255,.12); color: #fff;
+  }
+  .step-ctrl button:active { background: #ff2e63; }
+  .step-ctrl .val { font-size: 22px; font-weight: 900; min-width: 26px; text-align: center; }
+
+  .toggle { width: 54px; height: 32px; border-radius: 999px; background: rgba(255,255,255,.14); position: relative; transition: background .2s; border: none; }
+  .toggle::after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .toggle.on { background: #ff2e63; }
+  .toggle.on::after { left: 26px; }
+
+  .btn {
+    display: block; width: 100%; border: none; border-radius: 16px;
+    padding: 17px; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: .5px;
+    background: linear-gradient(90deg, #ff2e63, #ff6b9d);
+    box-shadow: 0 6px 24px rgba(255,46,99,.35);
+    margin-top: 6px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.cyan { background: linear-gradient(90deg, #08d9d6, #3ec6ff); box-shadow: 0 6px 24px rgba(8,217,214,.3); color: #06283d; }
+  .btn.ghost { background: rgba(255,255,255,.09); box-shadow: none; font-weight: 600; }
+  .btn:disabled { opacity: .35; box-shadow: none; }
+  .error { color: #ff6b9d; font-size: 13px; text-align: center; min-height: 18px; margin-top: 8px; }
+
+  /* ---- distribution des cartes ---- */
+  .pass-title { text-align: center; font-size: 15px; color: #9a96c8; margin-top: 8vh; letter-spacing: 1px; }
+  .pass-name { text-align: center; font-size: 40px; font-weight: 900; margin: 10px 0 6px; }
+  .pass-emoji { text-align: center; font-size: 56px; margin: 20px 0 30px; }
+  .hint { text-align: center; color: #9a96c8; font-size: 13px; margin: 14px 0; line-height: 1.5; }
+
+  .card-wrap { perspective: 1200px; margin: 12px auto; width: min(78vw, 300px); }
+  .game-card {
+    position: relative; width: 100%; aspect-ratio: 63/95;
+    border-radius: 20px; overflow: hidden;
+    background: #191632;
+    border: 2px solid rgba(255,255,255,.18);
+    box-shadow: 0 12px 44px rgba(0,0,0,.55), 0 0 40px rgba(255,46,99,.22);
+    animation: cardIn .5s cubic-bezier(.2,.9,.3,1.2);
+    display: flex; flex-direction: column;
+  }
+  @keyframes cardIn { from { transform: rotateY(90deg) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+  .game-card img { width: 100%; flex: 1; object-fit: cover; object-position: top; min-height: 0; }
+  .card-label { padding: 12px 10px 6px; text-align: center; background: linear-gradient(180deg, rgba(15,12,41,0), #0f0c29 45%); margin-top: -44px; position: relative; }
+  .card-label .cname { font-size: 24px; font-weight: 900; }
+  .card-label .canime { font-size: 12px; color: #08d9d6; letter-spacing: 1px; margin-top: 2px; padding-bottom: 8px; }
+  .game-card.white { align-items: center; justify-content: center; background: radial-gradient(circle at 50% 35%, #3a3560, #14112b); }
+  .game-card.white .q { font-size: 110px; font-weight: 900; color: #fff; text-shadow: 0 0 30px #ff2e63; }
+  .game-card.white .wt { font-size: 22px; font-weight: 900; color: #ff2e63; letter-spacing: 2px; margin-top: 8px; }
+  .game-card.white .wd { font-size: 13px; color: #cfcbee; padding: 14px 22px 0; text-align: center; line-height: 1.55; }
+
+  /* ---- ordre / vote ---- */
+  .order-list { counter-reset: n; margin: 8px 0; }
+  .order-item {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; font-weight: 700; font-size: 17px;
+  }
+  .order-item::before {
+    counter-increment: n; content: counter(n);
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #08d9d6, #3ec6ff); color: #06283d;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900;
+  }
+  .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  .vote-btn {
+    border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 18px 8px;
+    background: rgba(255,255,255,.06); color: #fff; font-size: 17px; font-weight: 800;
+  }
+  .vote-btn.sel { background: linear-gradient(135deg, rgba(255,46,99,.4), rgba(255,46,99,.15)); border-color: #ff2e63; }
+
+  .role-reveal { text-align: center; margin-top: 6vh; }
+  .role-reveal .who { font-size: 26px; font-weight: 900; }
+  .role-reveal .was { color: #9a96c8; margin: 10px 0 4px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+  .role-reveal .role { font-size: 38px; font-weight: 900; letter-spacing: 1px; margin: 6px 0 22px; }
+  .role.civil { color: #08d9d6; text-shadow: 0 0 24px rgba(8,217,214,.5); }
+  .role.under { color: #ff2e63; text-shadow: 0 0 24px rgba(255,46,99,.5); }
+  .role.white { color: #ffd166; text-shadow: 0 0 24px rgba(255,209,102,.5); }
+
+  .guess-input {
+    width: 100%; border: 1px solid rgba(255,255,255,.2); background: rgba(0,0,0,.3);
+    border-radius: 14px; padding: 15px; color: #fff; font-size: 18px; text-align: center; outline: none; margin: 12px 0;
+  }
+  .duo { display: flex; gap: 10px; }
+  .duo .btn { flex: 1; }
+
+  .winner-banner { text-align: center; margin: 5vh 0 8px; }
+  .winner-banner .emoji { font-size: 64px; }
+  .winner-banner .txt { font-size: 32px; font-weight: 900; margin-top: 10px; }
+  .words-recap { text-align: center; color: #cfcbee; font-size: 15px; line-height: 1.7; margin-bottom: 14px; }
+  .words-recap b { color: #fff; }
+  .recap-item { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.05); border-radius: 12px; padding: 9px 12px; margin-bottom: 7px; font-size: 15px; }
+  .recap-item img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: top; }
+  .recap-item .r { margin-left: auto; font-weight: 900; font-size: 12px; letter-spacing: 1px; }
+  .recap-item.dead { opacity: .45; }
+  .round-pill { text-align: center; margin-bottom: 10px; }
+  .round-pill span { background: rgba(8,217,214,.15); border: 1px solid rgba(8,217,214,.4); color: #08d9d6; padding: 5px 16px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  .spacer { flex: 1; }
+  .confetti { position: fixed; top: -30px; font-size: 24px; z-index: 99; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ ACCUEIL / CONFIG ============ -->
+  <section id="scr-setup" class="screen active">
+    <h1 class="logo">UNDERCOVER</h1>
+    <div class="tagline">— Édition Animé —</div>
+
+    <div class="panel">
+      <h2>👥 Joueurs (<span id="pcount">0</span>)</h2>
+      <div class="name-row">
+        <input id="name-input" type="text" placeholder="Prénom du joueur" maxlength="14" autocomplete="off" enterkeyhint="done">
+        <button class="btn cyan" style="width:auto;margin:0;padding:12px 18px" id="add-player">+</button>
+      </div>
+      <div class="chips" id="player-chips"></div>
+    </div>
+
+    <div class="panel">
+      <h2>🎭 Rôles</h2>
+      <div class="stepper" style="margin-bottom:14px">
+        <div class="label">Undercover 🕵️<small>Ils ont un mot différent</small></div>
+        <div class="step-ctrl">
+          <button id="uc-minus">−</button><div class="val" id="uc-val">1</div><button id="uc-plus">+</button>
+        </div>
+      </div>
+      <div class="stepper">
+        <div class="label">Mr. White 👻<small>Il n'a aucun mot (4 joueurs min.)</small></div>
+        <button class="toggle" id="white-toggle"></button>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="error" id="setup-error"></div>
+    <button class="btn" id="start-btn">🎬 Lancer la partie</button>
+  </section>
+
+  <!-- ============ PASSE LE TÉLÉPHONE ============ -->
+  <section id="scr-pass" class="screen">
+    <div class="pass-emoji">📱</div>
+    <div class="pass-title">Passe le téléphone à</div>
+    <div class="pass-name" id="pass-name"></div>
+    <div class="hint">Personne d'autre ne doit regarder l'écran&nbsp;!</div>
+    <div class="spacer"></div>
+    <button class="btn cyan" id="show-card-btn">👀 Voir ma carte secrète</button>
+  </section>
+
+  <!-- ============ CARTE SECRÈTE ============ -->
+  <section id="scr-card" class="screen">
+    <div class="round-pill"><span id="card-player-name"></span></div>
+    <div class="card-wrap" id="card-holder"></div>
+    <div class="hint">Mémorise ta carte, puis cache-la.<br>Ne la montre à personne&nbsp;!</div>
+    <div class="spacer"></div>
+    <button class="btn" id="hide-card-btn">🙈 C'est bon, cacher ma carte</button>
+  </section>
+
+  <!-- ============ ORDRE DE PAROLE ============ -->
+  <section id="scr-order" class="screen">
+    <h1 class="logo" style="font-size:24px">Manche <span id="round-num">1</span></h1>
+    <div class="tagline">Ordre de parole</div>
+    <div class="order-list" id="order-list"></div>
+    <div class="hint">Chacun son tour&nbsp;: décris ton personnage avec <b>un mot ou une phrase</b>, sans le nommer.<br>Puis débattez&nbsp;: qui est suspect&nbsp;?</div>
+    <div class="spacer"></div>
+    <button class="btn" id="to-vote-btn">🗳️ Passer au vote</button>
+  </section>
+
+  <!-- ============ VOTE ============ -->
+  <section id="scr-vote" class="screen">
+    <h1 class="logo" style="font-size:24px">Le vote</h1>
+    <div class="tagline">Qui éliminez-vous&nbsp;?</div>
+    <div class="vote-grid" id="vote-grid"></div>
+    <div class="spacer"></div>
+    <button class="btn" id="confirm-vote-btn" disabled>☠️ Éliminer</button>
+    <button class="btn ghost" id="back-discuss-btn">↩︎ Continuer à débattre</button>
+  </section>
+
+  <!-- ============ RÉVÉLATION DU RÔLE ============ -->
+  <section id="scr-reveal" class="screen">
+    <div class="role-reveal">
+      <div class="who" id="reveal-who"></div>
+      <div class="was">était</div>
+      <div class="role" id="reveal-role"></div>
+    </div>
+    <div id="white-guess-zone" style="display:none">
+      <div class="hint">Dernière chance&nbsp;: Mr. White peut deviner le mot des civils pour gagner&nbsp;!</div>
+      <input class="guess-input" id="guess-input" type="text" placeholder="Le mot des civils…" autocomplete="off">
+      <button class="btn" id="guess-btn">🎯 Valider la réponse</button>
+    </div>
+    <div id="guess-verdict-zone" style="display:none">
+      <div class="hint" id="guess-verdict-text"></div>
+      <div class="duo">
+        <button class="btn cyan" id="guess-yes">✅ Il a trouvé</button>
+        <button class="btn ghost" id="guess-no">❌ Raté</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="continue-btn" style="display:none">Continuer ➜</button>
+  </section>
+
+  <!-- ============ FIN DE PARTIE ============ -->
+  <section id="scr-end" class="screen">
+    <div class="winner-banner">
+      <div class="emoji" id="end-emoji">🏆</div>
+      <div class="txt" id="end-title"></div>
+    </div>
+    <div class="words-recap" id="end-words"></div>
+    <div id="end-recap"></div>
+    <div class="spacer"></div>
+    <button class="btn" id="replay-btn">🔁 Rejouer (mêmes joueurs)</button>
+    <button class="btn ghost" id="new-game-btn">⚙️ Changer les réglages</button>
+  </section>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const screens = document.querySelectorAll(".screen");
+function show(id) {
+  screens.forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function norm(s) {
+  return s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/* ================= CONFIG ================= */
+let names = JSON.parse(localStorage.getItem("ua_names") || "[]");
+let ucCount = 1;
+let mrWhite = false;
+
+function renderPlayers() {
+  $("pcount").textContent = names.length;
+  $("player-chips").innerHTML = names.map((n, i) =>
+    `<span class="chip">${n}<b data-i="${i}">×</b></span>`).join("");
+  document.querySelectorAll(".chip b").forEach(b =>
+    b.onclick = () => { names.splice(+b.dataset.i, 1); save(); renderPlayers(); });
+}
+function save() { localStorage.setItem("ua_names", JSON.stringify(names)); }
+function addPlayer() {
+  const v = $("name-input").value.trim();
+  if (!v) return;
+  if (names.some(n => norm(n) === norm(v))) { $("setup-error").textContent = "Ce prénom est déjà pris !"; return; }
+  names.push(v); save(); renderPlayers();
+  $("name-input").value = "";
+  $("setup-error").textContent = "";
+  $("name-input").focus();
+}
+$("add-player").onclick = addPlayer;
+$("name-input").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addPlayer(); } });
+$("uc-minus").onclick = () => { if (ucCount > 1) ucCount--; $("uc-val").textContent = ucCount; };
+$("uc-plus").onclick = () => { if (ucCount < 3) ucCount++; $("uc-val").textContent = ucCount; };
+$("white-toggle").onclick = function () { mrWhite = !mrWhite; this.classList.toggle("on", mrWhite); };
+renderPlayers();
+
+/* ================= ÉTAT DE PARTIE ================= */
+let players = [];        // {name, role: 'civil'|'under'|'white', card: {name,anime,img}|null, alive}
+let civilCard, underCard;
+let round = 1;
+let dealIdx = 0;
+let selectedVote = -1;
+let winner = null;       // 'civils' | 'infiltres' | 'white'
+
+function pickPair() {
+  let bag = JSON.parse(localStorage.getItem("ua_bag") || "[]");
+  if (!bag.length) bag = shuffle([...PAIRS.keys()]);
+  const idx = bag.pop();
+  localStorage.setItem("ua_bag", JSON.stringify(bag));
+  const pair = [...PAIRS[idx]];
+  return shuffle(pair);
+}
+
+function startGame() {
+  const n = names.length;
+  if (n < 3) { $("setup-error").textContent = "Il faut au moins 3 joueurs !"; return; }
+  if (mrWhite && n < 4) { $("setup-error").textContent = "Mr. White demande au moins 4 joueurs !"; return; }
+  const infiltres = ucCount + (mrWhite ? 1 : 0);
+  if (infiltres > n - 2) { $("setup-error").textContent = "Trop d'infiltrés pour " + n + " joueurs !"; return; }
+  $("setup-error").textContent = "";
+
+  const [a, b] = pickPair();
+  civilCard = a; underCard = b;
+
+  const roles = [];
+  for (let i = 0; i < ucCount; i++) roles.push("under");
+  if (mrWhite) roles.push("white");
+  while (roles.length < n) roles.push("civil");
+  shuffle(roles);
+
+  players = names.map((name, i) => ({
+    name,
+    role: roles[i],
+    card: roles[i] === "civil" ? civilCard : roles[i] === "under" ? underCard : null,
+    alive: true,
+  }));
+  round = 1; dealIdx = 0; winner = null;
+  showPass();
+}
+$("start-btn").onclick = startGame;
+
+/* ================= DISTRIBUTION ================= */
+function showPass() {
+  $("pass-name").textContent = players[dealIdx].name;
+  show("scr-pass");
+}
+$("show-card-btn").onclick = () => {
+  const p = players[dealIdx];
+  $("card-player-name").textContent = p.name;
+  const h = $("card-holder");
+  if (p.role === "white") {
+    h.innerHTML = `<div class="game-card white">
+        <div class="q">?</div>
+        <div class="wt">MR. WHITE</div>
+        <div class="wd">Tu n'as <b>aucun personnage</b>.<br>Écoute les autres, improvise…<br>et fais comme si tu savais 😏</div>
+      </div>`;
+  } else {
+    h.innerHTML = `<div class="game-card">
+        <img src="${p.card.img}" alt="">
+        <div class="card-label">
+          <div class="cname">${p.card.name}</div>
+          <div class="canime">${p.card.anime}</div>
+        </div>
+      </div>`;
+  }
+  buzz(30);
+  show("scr-card");
+};
+$("hide-card-btn").onclick = () => {
+  $("card-holder").innerHTML = "";
+  dealIdx++;
+  if (dealIdx < players.length) showPass();
+  else startRound();
+};
+
+/* ================= MANCHE ================= */
+function speakingOrder() {
+  const alive = players.filter(p => p.alive);
+  let order;
+  do { order = shuffle([...alive]); } while (order[0].role === "white");
+  return order;
+}
+function startRound() {
+  $("round-num").textContent = round;
+  $("order-list").innerHTML = speakingOrder().map(p => `<div class="order-item">${p.name}</div>`).join("");
+  show("scr-order");
+}
+$("to-vote-btn").onclick = () => {
+  selectedVote = -1;
+  $("confirm-vote-btn").disabled = true;
+  $("vote-grid").innerHTML = players.map((p, i) =>
+    p.alive ? `<button class="vote-btn" data-i="${i}">${p.name}</button>` : "").join("");
+  document.querySelectorAll(".vote-btn").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".vote-btn").forEach(x => x.classList.remove("sel"));
+    b.classList.add("sel");
+    selectedVote = +b.dataset.i;
+    $("confirm-vote-btn").disabled = false;
+    $("confirm-vote-btn").textContent = "☠️ Éliminer " + players[selectedVote].name;
+  });
+  $("confirm-vote-btn").textContent = "☠️ Éliminer";
+  show("scr-vote");
+};
+$("back-discuss-btn").onclick = () => show("scr-order");
+
+/* ================= ÉLIMINATION ================= */
+$("confirm-vote-btn").onclick = () => {
+  const p = players[selectedVote];
+  p.alive = false;
+  buzz([60, 40, 60]);
+  $("reveal-who").textContent = p.name;
+  const r = $("reveal-role");
+  r.className = "role " + (p.role === "civil" ? "civil" : p.role === "under" ? "under" : "white");
+  r.textContent = p.role === "civil" ? "CIVIL 😇" : p.role === "under" ? "UNDERCOVER 🕵️" : "MR. WHITE 👻";
+  $("white-guess-zone").style.display = "none";
+  $("guess-verdict-zone").style.display = "none";
+  $("continue-btn").style.display = "none";
+  if (p.role === "white") {
+    $("guess-input").value = "";
+    $("white-guess-zone").style.display = "block";
+  } else {
+    $("continue-btn").style.display = "block";
+  }
+  show("scr-reveal");
+};
+
+$("guess-btn").onclick = () => {
+  const g = $("guess-input").value.trim();
+  if (!g) return;
+  const target = norm(civilCard.name);
+  const guess = norm(g);
+  const auto = guess.length >= 3 && (target.includes(guess) || guess.includes(target));
+  $("guess-verdict-text").innerHTML =
+    `Mr. White propose&nbsp;: <b>«&nbsp;${g}&nbsp;»</b><br>Le mot des civils était&nbsp;: <b>${civilCard.name}</b>` +
+    (auto ? "<br>🎯 Ça a l'air correct !" : "<br>🤔 Ça a l'air raté…");
+  $("white-guess-zone").style.display = "none";
+  $("guess-verdict-zone").style.display = "block";
+};
+$("guess-yes").onclick = () => { winner = "white"; endGame(); };
+$("guess-no").onclick = () => { afterElimination(); };
+$("continue-btn").onclick = () => { afterElimination(); };
+
+function afterElimination() {
+  const alive = players.filter(p => p.alive);
+  const badAlive = alive.filter(p => p.role !== "civil").length;
+  const civAlive = alive.length - badAlive;
+  if (badAlive === 0) { winner = "civils"; endGame(); return; }
+  if (badAlive >= civAlive) { winner = "infiltres"; endGame(); return; }
+  round++;
+  startRound();
+}
+
+/* ================= FIN ================= */
+function confettiBurst() {
+  const emojis = ["🎉", "✨", "🌸", "⭐", "🎊"];
+  for (let i = 0; i < 34; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti";
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.animationDuration = 2.2 + Math.random() * 2.5 + "s";
+    s.style.animationDelay = Math.random() * .8 + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6000);
+  }
+}
+function endGame() {
+  const map = {
+    civils:    ["😇", "Les Civils gagnent !"],
+    infiltres: ["🕵️", "Les Infiltrés gagnent !"],
+    white:     ["👻", "Mr. White gagne !"],
+  };
+  $("end-emoji").textContent = map[winner][0];
+  $("end-title").textContent = map[winner][1];
+  $("end-words").innerHTML =
+    `Mot des civils&nbsp;: <b>${civilCard.name}</b> <small>(${civilCard.anime})</small><br>` +
+    `Mot des undercover&nbsp;: <b>${underCard.name}</b> <small>(${underCard.anime})</small>`;
+  $("end-recap").innerHTML = players.map(p => {
+    const rl = p.role === "civil" ? ['<span style="color:#08d9d6">CIVIL</span>', civilCard.img]
+             : p.role === "under" ? ['<span style="color:#ff2e63">UNDERCOVER</span>', underCard.img]
+             : ['<span style="color:#ffd166">MR. WHITE</span>', null];
+    return `<div class="recap-item${p.alive ? "" : " dead"}">` +
+      (rl[1] ? `<img src="${rl[1]}" alt="">` : `<span style="width:34px;text-align:center;font-size:22px">👻</span>`) +
+      `${p.name}${p.alive ? "" : " ☠️"}<span class="r">${rl[0]}</span></div>`;
+  }).join("");
+  confettiBurst();
+  buzz([80, 60, 80, 60, 160]);
+  show("scr-end");
+}
+$("replay-btn").onclick = startGame;
+$("new-game-btn").onclick = () => show("scr-setup");
+
+/* ================= PWA offline ================= */
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>

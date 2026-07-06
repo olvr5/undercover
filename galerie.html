@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galerie des paires — Undercover Animé</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #14112b; color: #eee; padding: 16px; }
+  h1 { font-size: 20px; margin-bottom: 14px; }
+  .pair { display: flex; align-items: center; gap: 10px; background: #1f1b3a; border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+  .c { text-align: center; width: 120px; }
+  .c img { width: 100px; height: 140px; object-fit: cover; object-position: top; border-radius: 8px; }
+  .c .n { font-weight: 800; font-size: 14px; margin-top: 4px; }
+  .c .a { font-size: 11px; color: #08d9d6; }
+  .vs { font-weight: 900; color: #ff2e63; }
+</style>
+</head>
+<body>
+<h1>Les 41 paires du jeu</h1>
+<div id="list"></div>
+<script src="data.js"></script>
+<script>
+document.getElementById("list").innerHTML = PAIRS.map(p => `
+  <div class="pair">
+    <div class="c"><img src="${p[0].img}"><div class="n">${p[0].name}</div><div class="a">${p[0].anime}</div></div>
+    <div class="vs">VS</div>
+    <div class="c"><img src="${p[1].img}"><div class="n">${p[1].name}</div><div class="a">${p[1].anime}</div></div>
+  </div>`).join("");
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "Undercover Animé",
+  "short_name": "Undercover",
+  "description": "Le jeu Undercover en édition animé — un téléphone, des infiltrés, des persos cultes.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0c29",
+  "theme_color": "#0f0c29",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
